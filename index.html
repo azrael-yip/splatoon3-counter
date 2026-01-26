@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Splatoon 3 打工武器紀錄 </title>
+    <style>
+        :root {
+            --bg-color: #2b2b2b;
+            --card-bg: #3d3d3d;
+            --text-color: #ecf0f1;
+            --accent-orange: #ff9f43;
+            --accent-green: #1dd1a1;
+            --border-color: #576574;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        /* Fixed Header */
+        .controls-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--bg-color);
+            padding: 10px 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        h1 { color: var(--accent-orange); margin: 5px 0; font-size: 1.5rem; }
+        
+        .controls {
+            background: #34495e;
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: none;
+            outline: none;
+            width: 140px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        button.btn-reset { background-color: #ee5253; color: white; }
+        button.btn-reset:hover { background-color: #ff6b6b; }
+        
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+            margin-bottom: 10px;
+        }
+        .filter-btn {
+            background: #444;
+            color: #ccc;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            border-radius: 15px;
+            border: 1px solid #555;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .filter-btn:hover { background: #555; }
+        .filter-btn.active {
+            background: var(--accent-orange);
+            color: #222;
+            border-color: var(--accent-orange);
+            font-weight: bold;
+        }
+
+        /* Grid */
+        .weapon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 15px;
+            padding-bottom: 50px;
+        }
+
+        .weapon-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+            position: relative;
+            min-height: 130px;
+        }
+
+        .weapon-card:hover { border-color: #bbb; transform: translateY(-2px); }
+        .weapon-card:active { transform: scale(0.96); }
+
+        .weapon-card.active {
+            border-color: var(--accent-green);
+            background-color: #2f4038;
+            box-shadow: 0 0 8px rgba(29, 209, 161, 0.2);
+        }
+
+        .img-container {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+        }
+
+        .weapon-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .weapon-name {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #bdc3c7;
+            line-height: 1.2;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.4em;
+        }
+
+        .weapon-count {
+            font-size: 1.2em;
+            color: var(--accent-green);
+            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            width: 100%;
+            text-align: center;
+            border-radius: 4px;
+            margin-top: auto;
+        }
+        
+        .zero-count .weapon-count { color: #666; }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls-container">
+        <h1>🐟 打工武器记录表</h1>
+        <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">
+           主要是FOR綠問號使用
+        </div>
+        
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterWeapons('all')">全部</button>
+            <button class="filter-btn" onclick="filterWeapons('熊印')">熊印</button>
+            <button class="filter-btn" onclick="filterWeapons('射击枪')">射击枪</button>
+            <button class="filter-btn" onclick="filterWeapons('滚筒')">滚筒/画笔</button>
+            <button class="filter-btn" onclick="filterWeapons('狙击枪')">狙击枪</button>
+            <button class="filter-btn" onclick="filterWeapons('泼桶')">泼桶</button>
+            <button class="filter-btn" onclick="filterWeapons('旋转枪')">旋转枪</button>
+            <button class="filter-btn" onclick="filterWeapons('机动枪')">机动枪</button>
+            <button class="filter-btn" onclick="filterWeapons('防空伞')">防空伞</button>
+            <button class="filter-btn" onclick="filterWeapons('爆破枪')">爆破枪</button>
+            <button class="filter-btn" onclick="filterWeapons('猎鱼弓')">弓/刮水刀</button>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="🔍 搜寻武器..." oninput="renderGrid()">
+            <div style="color: #bbb; font-size: 0.9em; border-left: 1px solid #666; padding-left: 15px;">
+                左键 +1 &nbsp;|&nbsp; 右键 -1
+            </div>
+            <button class="btn-reset" onclick="resetAll()">⚠️ 全部重置</button>
+        </div>
+    </div>
+
+    <div id="grid" class="weapon-grid"></div>
+
+    <script>
+        // --- DATA SOURCE (Matches standard internal IDs) ---
+        const weaponData = [
+            // Grizzco
+            { name: "熊先生印章爆破枪", id: "Blaster_Bear", cat: "熊印" },
+            { name: "熊先生印章防空伞", id: "Shelter_Bear", cat: "熊印" },
+            { name: "熊先生印章狙击枪", id: "Charger_Bear", cat: "熊印" },
+            { name: "熊先生印章泼桶", id: "Slosher_Bear", cat: "熊印" },
+            { name: "熊先生印章猎鱼弓", id: "Stringer_Bear", cat: "熊印" },
+            { name: "熊先生印章刮水刀", id: "Saber_Bear", cat: "熊印" },
+            { name: "熊先生印章机动枪", id: "Twins_Bear", cat: "熊印" },
+            { name: "熊先生印章滚筒", id: "Roller_Bear", cat: "熊印" },
+            // Shooters
+            { name: "新叶射击枪", id: "Shooter_First", cat: "射击枪" },
+            { name: "斯普拉射击枪", id: "Shooter_Normal", cat: "射击枪" },
+            { name: "顶尖射击枪", id: "Shooter_Expert", cat: "射击枪" },
+            { name: "专业模型枪MG", id: "Shooter_Blaze", cat: "射击枪" },
+            { name: "N-ZAP85", id: "Shooter_QuickMiddle", cat: "射击枪" },
+            { name: ".52加仑", id: "Shooter_Gravity", cat: "射击枪" },
+            { name: ".96加仑", id: "Shooter_Heavy", cat: "射击枪" },
+            { name: "喷射清洁枪", id: "Shooter_Long", cat: "射击枪" },
+            { name: "广域标记枪", id: "Shooter_Short", cat: "射击枪" }, 
+            { name: "窄域标记枪", id: "Shooter_Precision", cat: "射击枪" }, 
+            { name: "L3卷管枪", id: "Shooter_Triple", cat: "射击枪" },
+            { name: "H3卷管枪", id: "Shooter_Flash", cat: "射击枪" },
+            { name: "开瓶喷泉枪", id: "Shooter_Bottle", cat: "射击枪" },
+            { name: "太空射击枪", id: "Shooter_Nova", cat: "射击枪" },
+            // Blasters
+            { name: "新星爆破枪", id: "Blaster_Short", cat: "爆破枪" },
+            { name: "火热爆破枪", id: "Blaster_Middle", cat: "爆破枪" },
+            { name: "远距爆破枪", id: "Blaster_Long", cat: "爆破枪" },
+            { name: "冲涂爆破枪", id: "Blaster_Light", cat: "爆破枪" },
+            { name: "快速爆破枪", id: "Blaster_Precision", cat: "爆破枪" },
+            { name: "快速爆破枪 精英", id: "Blaster_Expert", cat: "爆破枪" },
+            { name: "S-BLAST92", id: "Blaster_ShortLong", cat: "爆破枪" },
+            // Rollers
+            { name: "斯普拉滚筒", id: "Roller_Normal", cat: "滚筒" },
+            { name: "碳纤维滚筒", id: "Roller_Compact", cat: "滚筒" },
+            { name: "电动马达滚筒", id: "Roller_Heavy", cat: "滚筒" },
+            { name: "可变式滚筒", id: "Roller_Hunter", cat: "滚筒" },
+            { name: "宽滚筒", id: "Roller_Wide", cat: "滚筒" },
+            { name: "巴勃罗", id: "Brush_Mini", cat: "滚筒" },
+            { name: "北斋", id: "Brush_Normal", cat: "滚筒" },
+            { name: "文森", id: "Brush_Heavy", cat: "滚筒" },
+            // Chargers
+            { name: "斯普拉蓄力狙击枪", id: "Charger_Normal", cat: "狙击枪" },
+            /*{ name: "斯普拉准星枪", id: "Charger_NormalScope", cat: "狙击枪" },*/
+            { name: "4K", id: "Charger_Long", cat: "狙击枪" },
+            /*{ name: "4K准星枪", id: "Charger_LongScope", cat: "狙击枪" },*/
+            { name: "14式竹筒枪·甲", id: "Charger_Light", cat: "狙击枪" },
+            { name: "鱿快洁α", id: "Charger_Quick", cat: "狙击枪" },
+            { name: "油管", id: "Charger_Keep", cat: "狙击枪" },
+            { name: "R-PEN/5H", id: "Charger_Pencil", cat: "狙击枪" },
+            // Sloshers
+            { name: "飞溅泼桶", id: "Slosher_Strong", cat: "泼桶" },
+            { name: "洗笔桶", id: "Slosher_Diffusion", cat: "泼桶" },
+            { name: "回旋泼桶", id: "Slosher_Launcher", cat: "泼桶" },
+            { name: "满溢泡澡泼桶", id: "Slosher_Bathtub", cat: "泼桶" },
+            { name: "爆炸泼桶", id: "Slosher_Explosion", cat: "泼桶" },
+            { name: "墨雨", id: "Slosher_Washtub", cat: "泼桶" }, 
+            // Splatlings
+            { name: "斯普拉旋转枪", id: "Spinner_Mini", cat: "旋转枪" },
+            { name: "桶装旋转枪", id: "Spinner_Standard", cat: "旋转枪" },
+            { name: "消防栓旋转枪", id: "Spinner_Hyper", cat: "旋转枪" },
+            { name: "圆珠笔", id: "Spinner_Down", cat: "旋转枪" },
+            { name: "鹦鹉螺", id: "Spinner_Seryu", cat: "旋转枪" },
+            { name: "审查者", id: "Spinner_Duberu", cat: "旋转枪" },
+            // Dualies
+            { name: "斯普拉机动枪", id: "Twins_Normal", cat: "机动枪" },
+            { name: "溅镀枪", id: "Twins_Short", cat: "机动枪" }, 
+            { name: "双重清洁枪", id: "Twins_Long", cat: "机动枪" },
+            { name: "开尔文525", id: "Twins_Gallon", cat: "机动枪" },
+            { name: "四重弹跳手枪", id: "Twins_Hover", cat: "机动枪" },
+            { name: "灭火器FF", id: "Twins_Dual", cat: "机动枪" },
+            // Brellas
+            { name: "遮阳防空伞", id: "Shelter_Normal", cat: "防空伞" },
+            { name: "露营防空伞", id: "Shelter_Face", cat: "防空伞" },
+            { name: "特工伞", id: "Shelter_Compact", cat: "防空伞" },
+            { name: "24式防空伞·甲", id: "Shelter_Wide", cat: "防空伞" },
+            // Stringers / Splatanas
+            { name: "三发猎鱼弓", id: "Stringer_Normal", cat: "猎鱼弓" },
+            { name: "LACT-450", id: "Stringer_Short", cat: "猎鱼弓" },
+            { name: "邦普 V", id: "Stringer_V", cat: "猎鱼弓" }, 
+            { name: "工作刮水刀", id: "Saber_Normal", cat: "猎鱼弓" },
+            { name: "雨刷", id: "Saber_Heavy", cat: "猎鱼弓" },
+            { name: "薄荷牙膏刀", id: "Saber_Lite", cat: "猎鱼弓" } 
+        ];
+
+        // --- Logic ---
+
+        const STORAGE_KEY = "splatoon3_local_tracker";
+        let userCounts = {};
+        let currentFilter = "all";
+
+        window.onload = function() {
+            loadCounts();
+            renderGrid();
+        };
+
+        function loadCounts() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                userCounts = JSON.parse(stored);
+            }
+        }
+
+        function saveCounts() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userCounts));
+        }
+
+        // --- 關鍵圖片邏輯 ---
+        // 我們不直接回傳字串，而是在渲染時透過 DOM 處理 src 切換
+        function getLocalPath(id) {
+            return `images/Path_Wst_${id}.png`;
+        }
+        
+        function getOnlinePath(id) {
+            return `https://cdn.jsdelivr.net/gh/Leanny/splat3@main/images/weapon_flat/Path_Wst_${id}.png`;
+        }
+
+        function filterWeapons(category) {
+            currentFilter = category;
+            document.getElementById('searchInput').value = "";
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            const buttons = Array.from(document.querySelectorAll('.filter-btn'));
+            const targetBtn = buttons.find(b => b.textContent.includes(category) || (category === 'all' && b.textContent === '全部'));
+            if(targetBtn) targetBtn.classList.add('active');
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            grid.innerHTML = '';
+
+            const filteredList = weaponData.filter(w => {
+                if (searchVal && !w.name.toLowerCase().includes(searchVal)) return false;
+                if (!searchVal && currentFilter !== 'all') {
+                    if (currentFilter === '猎鱼弓') return w.cat === '猎鱼弓';
+                    if (currentFilter === '滚筒') return w.cat === '滚筒';
+                    if (w.cat !== currentFilter) return false;
+                }
+                return true;
+            });
+
+            filteredList.forEach(weapon => {
+                const count = userCounts[weapon.name] || 0;
+                
+                const card = document.createElement('div');
+                card.className = `weapon-card ${count > 0 ? 'active' : 'zero-count'}`;
+                
+                // Image Container
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'img-container';
+
+                const img = document.createElement('img');
+                img.className = 'weapon-img';
+                
+                // ------------------------------------------
+                // [Logic] Try Local -> Fail -> Try Online
+                // ------------------------------------------
+                img.src = getLocalPath(weapon.id); // Default: Local
+                
+                img.onerror = function() {
+                    // console.log(`Local missing for ${weapon.name}, trying online...`);
+                    // Avoid infinite loop by nullifying onerror before switching src
+                    this.onerror = function() {
+                        // If online also fails, show fallback text
+                        this.style.display = 'none';
+                        imgContainer.innerHTML = `<span style="font-size:0.8em;color:#aaa;">${weapon.name.substring(0,2)}</span>`;
+                    };
+                    this.src = getOnlinePath(weapon.id); // Switch to Online
+                };
+
+                imgContainer.appendChild(img);
+                // ------------------------------------------
+
+                // Events
+                card.onclick = () => updateCount(weapon.name, 1);
+                card.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    updateCount(weapon.name, -1);
+                };
+
+                card.innerHTML = `
+                    <div class="weapon-name">${weapon.name}</div>
+                    <div class="weapon-count">${count}</div>
+                `;
+                
+                card.prepend(imgContainer);
+                grid.appendChild(card);
+            });
+        }
+
+        function updateCount(name, delta) {
+            if (!userCounts[name]) userCounts[name] = 0;
+            userCounts[name] += delta;
+            if (userCounts[name] < 0) userCounts[name] = 0;
+            saveCounts();
+            renderGrid();
+        }
+
+        function resetAll() {
+            if (confirm("确定要重置所有数据吗？")) {
+                userCounts = {};
+                saveCounts();
+                renderGrid();
+            }
+        }
+    </script>
+</body>
+</html>
