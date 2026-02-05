@@ -1,467 +1,538 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
-    <title>Splatoon 3 打工武器紀錄</title>
+    <title>Splatoon 3 打工統計 </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <style>
-        :root {
-            --bg-color: #2b2b2b;
-            --card-bg: #3d3d3d;
-            --text-color: #ecf0f1;
-            --accent-orange: #ff9f43;
-            --accent-green: #1dd1a1;
-            --border-color: #576574;
-        }
-
-        body {
-            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            user-select: none;
-        }
-
-        /* Fixed Header */
-        .controls-container {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background-color: var(--bg-color);
-            padding: 10px 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border-bottom: 1px solid #444;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-
-        h1 { color: var(--accent-orange); margin: 5px 0; font-size: 1.5rem; }
+        :root { --bg: #2b2b2b; --card: #3d3d3d; --text: #ecf0f1; --accent: #ff9f43; --green: #1dd1a1; --blue: #3498db; --red: #ff6b6b; --switch-off: #555; }
+        body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; user-select: none; }
         
-        /* Progress Info Style */
-        .progress-info {
-            font-size: 1.1rem;
-            color: var(--accent-green);
-            font-weight: bold;
-            margin: 5px 0;
-            background: rgba(29, 209, 161, 0.1);
-            padding: 5px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--accent-green);
+        .controls { 
+            position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 15px; 
+            width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; 
+            border-bottom: 1px solid #444; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 0 0 15px 15px; 
         }
+        
+        h1 { color: var(--accent); margin: 5px 0; font-size: 1.6rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .badge { background: linear-gradient(135deg, #00b894, #00cec9); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; vertical-align: middle; margin-left: 8px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        
+        .status-panel {
+            background: rgba(29, 209, 161, 0.05); border: 1px solid var(--green);
+            padding: 8px 20px; border-radius: 8px; margin: 10px 0; text-align: center; width: 80%; max-width: 600px;
+        }
+        .status-title { color: var(--green); font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
+        .status-detail { color: #aaa; font-size: 0.85rem; }
+        
+        .drop-zone { 
+            background: rgba(52, 152, 219, 0.05); padding: 15px; border-radius: 12px; margin: 10px 0; 
+            border: 2px dashed var(--blue); cursor: pointer; width: 80%; max-width: 600px; text-align: center; 
+            transition: all 0.3s ease; 
+        }
+        .drop-zone:hover { background: rgba(52, 152, 219, 0.15); border-color: #fff; transform: scale(1.01); }
+        
+        /* === 第一區：分類過濾器 === */
+        .filters { 
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 15px; width: 100%; 
+        }
+        .filter-btn { background: #444; color: #ccc; padding: 6px 14px; border-radius: 20px; border: 1px solid #555; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+        .filter-btn.active { background: var(--accent); color: #222; font-weight: bold; border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
-        .controls {
-            background: #34495e;
-            padding: 8px 15px;
-            border-radius: 8px;
+        /* === 第二區：工具列 (分隔線 + 搜尋 + 排序 + 清除) === */
+        .toolbar {
+            width: 100%;
+            border-top: 1px solid #444;
+            padding-top: 15px;
             display: flex;
-            gap: 10px;
-            align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
+            align-items: center;
+            gap: 20px;
             flex-wrap: wrap;
         }
 
-        input[type="text"] {
-            padding: 6px 10px;
-            border-radius: 4px;
-            border: none;
-            outline: none;
-            width: 140px;
-            background: #ecf0f1;
-            color: #2c3e50;
+        /* 搜尋框 */
+        .search-input { 
+            padding: 8px 15px; border-radius: 20px; border: 1px solid #555; 
+            background: #333; color: white; outline: none; width: 200px;
+            transition: border 0.3s;
         }
+        .search-input:focus { border-color: var(--blue); box-shadow: 0 0 5px rgba(52,152,219,0.5); }
 
-        button {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        button.btn-reset { background-color: #ee5253; color: white; }
-        button.btn-reset:hover { background-color: #ff6b6b; }
-        
-        /* Filters */
-        .filters {
+        /* === 滑動開關樣式 (Toggle Switch) === */
+        .toggle-wrapper {
             display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 900px;
-            margin-bottom: 10px;
-        }
-        .filter-btn {
-            background: #444;
-            color: #ccc;
-            padding: 4px 10px;
-            font-size: 0.85rem;
-            border-radius: 15px;
-            border: 1px solid #555;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-        .filter-btn:hover { background: #555; }
-        .filter-btn.active {
-            background: var(--accent-orange);
-            color: #222;
-            border-color: var(--accent-orange);
-            font-weight: bold;
-        }
-
-        /* Grid */
-        .weapon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-            gap: 10px;
-            width: 100%;
-            max-width: 1200px;
-            margin-top: 15px;
-            padding-bottom: 50px;
-        }
-
-        .weapon-card {
-            background-color: var(--card-bg);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            gap: 10px;
             cursor: pointer;
-            transition: transform 0.1s, border-color 0.2s;
+            padding: 5px 10px;
+            border-radius: 30px;
+            transition: background 0.3s;
+        }
+        .toggle-wrapper:hover { background: rgba(255,255,255,0.05); }
+
+        .toggle-label { font-size: 0.9rem; font-weight: bold; color: #aaa; transition: color 0.3s; }
+        .toggle-label.active-text { color: var(--green); text-shadow: 0 0 5px rgba(29,209,161,0.5); }
+
+        .toggle-track {
+            width: 44px; height: 24px;
+            background-color: var(--switch-off);
+            border-radius: 12px;
             position: relative;
-            min-height: 130px;
+            transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .weapon-card:hover { border-color: #bbb; transform: translateY(-2px); }
-        .weapon-card:active { transform: scale(0.96); }
-
-        .weapon-card.active {
-            border-color: var(--accent-green);
-            background-color: #2f4038;
-            box-shadow: 0 0 8px rgba(29, 209, 161, 0.2);
-        }
-
-        .img-container {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.2);
+        .toggle-knob {
+            width: 20px; height: 20px;
+            background-color: white;
             border-radius: 50%;
+            position: absolute;
+            top: 2px; left: 2px;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        .weapon-img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
+        /* 開關啟動狀態 */
+        .toggle-wrapper.on .toggle-track { background-color: var(--green); }
+        .toggle-wrapper.on .toggle-knob { transform: translateX(20px); }
 
-        .weapon-name {
-            font-size: 0.8rem;
-            text-align: center;
-            color: #bdc3c7;
-            line-height: 1.2;
-            margin-bottom: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 2.4em;
+        /* 清除按鈕 */
+        .btn-clear { 
+            background: var(--red); color: white; border: none; 
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; 
+            transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        .btn-clear:hover { background: #c0392b; }
 
-        .weapon-count {
-            font-size: 1.2em;
-            color: var(--accent-green);
-            font-weight: bold;
-            background: rgba(0,0,0,0.3);
-            width: 100%;
-            text-align: center;
-            border-radius: 4px;
-            margin-top: auto;
-        }
-        
-        .zero-count .weapon-count { color: #666; }
-
+        /* 網格與卡片 */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; width: 100%; max-width: 1200px; padding-bottom: 50px; margin-top: 20px; }
+        .card { background: var(--card); border: 2px solid #576574; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .card.active { border-color: var(--green); background: #2f4038; box-shadow: 0 0 10px rgba(29, 209, 161, 0.2); }
+        .img-box { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 5px; }
+        .card img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
+        .card .name { font-size: 0.85rem; text-align: center; color: #bdc3c7; height: 2.8em; overflow: hidden; margin: 0 0 4px; line-height: 1.4em; }
+        .card .count { font-size: 1.4em; color: var(--green); font-weight: 800; background: rgba(0,0,0,0.4); width: 100%; text-align: center; border-radius: 6px; padding: 2px 0; }
     </style>
 </head>
 <body>
-
-    <div class="controls-container">
-        <h1>🐟 打工武器记录表</h1>
+    <div class="controls">
+        <h1>🐟 打工武器紀錄 </h1>
         
-        <div id="progress-display" class="progress-info">
-            收集进度: 0 / 0 (0%)
-        </div>
-
-        <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-           主要是FOR綠問號使用
+        <div class="status-panel">
+            <div id="status-title" class="status-title">等待資料導入...</div>
+            <div id="status-detail" class="status-detail">請拖入 stat.ink 匯出的 JSON 檔案</div>
         </div>
         
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
+            <div style="font-size: 1.1rem; font-weight: bold; color: var(--blue); margin-bottom: 5px;">📂 點擊或拖入檔案</div>
+            <div style="font-size: 0.9rem; color: #aaa;">支援 .json / .gz (自動只計算最新一輪的班表)</div>
+            <input type="file" id="fileInput" accept=".json,.gz" style="display: none" onchange="handleFile(this.files[0])">
+        </div>
+
         <div class="filters">
-            <button class="filter-btn active" onclick="filterWeapons('all')">全部</button>
-            <button class="filter-btn" onclick="filterWeapons('熊印')">熊印</button>
-            <button class="filter-btn" onclick="filterWeapons('射击枪')">射击枪</button>
-            <button class="filter-btn" onclick="filterWeapons('滚筒')">滚筒/画笔</button>
-            <button class="filter-btn" onclick="filterWeapons('狙击枪')">狙击枪</button>
-            <button class="filter-btn" onclick="filterWeapons('泼桶')">泼桶</button>
-            <button class="filter-btn" onclick="filterWeapons('旋转枪')">旋转枪</button>
-            <button class="filter-btn" onclick="filterWeapons('机动枪')">机动枪</button>
-            <button class="filter-btn" onclick="filterWeapons('防空伞')">防空伞</button>
-            <button class="filter-btn" onclick="filterWeapons('爆破枪')">爆破枪</button>
-            <button class="filter-btn" onclick="filterWeapons('猎鱼弓')">弓/刮水刀</button>
+            <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+            <button class="filter-btn" onclick="setFilter('熊印')">熊印</button>
+            <button class="filter-btn" onclick="setFilter('射击枪')">射击枪</button>
+            <button class="filter-btn" onclick="setFilter('滚筒')">滚筒/画笔</button>
+            <button class="filter-btn" onclick="setFilter('狙击枪')">狙击枪</button>
+            <button class="filter-btn" onclick="setFilter('泼桶')">泼桶</button>
+            <button class="filter-btn" onclick="setFilter('旋转枪')">旋转枪</button>
+            <button class="filter-btn" onclick="setFilter('机动枪')">机动枪</button>
+            <button class="filter-btn" onclick="setFilter('防空伞')">防空伞</button>
+            <button class="filter-btn" onclick="setFilter('爆破枪')">爆破枪</button>
+            <button class="filter-btn" onclick="setFilter('猎鱼弓')">猎鱼弓</button>
+            <button class="filter-btn" onclick="setFilter('刮水刀')">刮水刀</button>
         </div>
-
-        <div class="controls">
-            <input type="text" id="searchInput" placeholder="🔍 搜寻武器..." oninput="renderGrid()">
-            <div style="color: #bbb; font-size: 0.9em; border-left: 1px solid #666; padding-left: 15px;">
-                左键 +1 &nbsp;|&nbsp; 右键 -1
+        
+        <div class="toolbar">
+            <input type="text" id="search" class="search-input" placeholder="🔍 搜尋武器..." oninput="render()">
+            
+            <div class="toggle-wrapper" id="sortWrapper" onclick="toggleSort()">
+                <span class="toggle-label" id="labelDefault">預設</span>
+                <div class="toggle-track">
+                    <div class="toggle-knob"></div>
+                </div>
+                <span class="toggle-label" id="labelCount">使用次數</span>
             </div>
-            <button class="btn-reset" onclick="resetAll()">⚠️ 全部重置</button>
+
+            <button class="btn-clear" onclick="clearData()">🗑️ 清除資料</button>
         </div>
+        
+        <div id="progress" style="margin-top: 10px; color: var(--green); font-weight: bold;"></div>
     </div>
 
-    <div id="grid" class="weapon-grid"></div>
+    <div id="grid" class="grid"></div>
 
-    <script>
-        // --- DATA SOURCE (Matches standard internal IDs) ---
-        const weaponData = [
-            // Grizzco
-            { name: "熊先生印章爆破枪", id: "Blaster_Bear", cat: "熊印" },
-            { name: "熊先生印章防空伞", id: "Shelter_Bear", cat: "熊印" },
-            { name: "熊先生印章狙击枪", id: "Charger_Bear", cat: "熊印" },
-            { name: "熊先生印章泼桶", id: "Slosher_Bear", cat: "熊印" },
-            { name: "熊先生印章猎鱼弓", id: "Stringer_Bear", cat: "熊印" },
-            { name: "熊先生印章刮水刀", id: "Saber_Bear", cat: "熊印" },
-            { name: "熊先生印章机动枪", id: "Twins_Bear", cat: "熊印" },
-            { name: "熊先生印章滚筒", id: "Roller_Bear", cat: "熊印" },
-            // Shooters
-            { name: "新叶射击枪", id: "Shooter_First", cat: "射击枪" },
-            { name: "斯普拉射击枪", id: "Shooter_Normal", cat: "射击枪" },
-            { name: "顶尖射击枪", id: "Shooter_Expert", cat: "射击枪" },
-            { name: "专业模型枪MG", id: "Shooter_Blaze", cat: "射击枪" },
-            { name: "N-ZAP85", id: "Shooter_QuickMiddle", cat: "射击枪" },
-            { name: ".52加仑", id: "Shooter_Gravity", cat: "射击枪" },
-            { name: ".96加仑", id: "Shooter_Heavy", cat: "射击枪" },
-            { name: "喷射清洁枪", id: "Shooter_Long", cat: "射击枪" },
-            { name: "广域标记枪", id: "Shooter_Short", cat: "射击枪" }, 
-            { name: "窄域标记枪", id: "Shooter_Precision", cat: "射击枪" }, 
-            { name: "L3卷管枪", id: "Shooter_Triple", cat: "射击枪" },
-            { name: "H3卷管枪", id: "Shooter_Flash", cat: "射击枪" },
-            { name: "开瓶喷泉枪", id: "Shooter_Bottle", cat: "射击枪" },
-            { name: "太空射击枪", id: "Shooter_Nova", cat: "射击枪" },
-            // Blasters
-            { name: "新星爆破枪", id: "Blaster_Short", cat: "爆破枪" },
-            { name: "火热爆破枪", id: "Blaster_Middle", cat: "爆破枪" },
-            { name: "远距爆破枪", id: "Blaster_Long", cat: "爆破枪" },
-            { name: "冲涂爆破枪", id: "Blaster_Light", cat: "爆破枪" },
-            { name: "快速爆破枪", id: "Blaster_Precision", cat: "爆破枪" },
-            { name: "快速爆破枪 精英", id: "Blaster_Expert", cat: "爆破枪" },
-            { name: "S-BLAST92", id: "Blaster_ShortLong", cat: "爆破枪" },
-            // Rollers
-            { name: "斯普拉滚筒", id: "Roller_Normal", cat: "滚筒" },
-            { name: "碳纤维滚筒", id: "Roller_Compact", cat: "滚筒" },
-            { name: "电动马达滚筒", id: "Roller_Heavy", cat: "滚筒" },
-            { name: "可变式滚筒", id: "Roller_Hunter", cat: "滚筒" },
-            { name: "宽滚筒", id: "Roller_Wide", cat: "滚筒" },
-            { name: "巴勃罗", id: "Brush_Mini", cat: "滚筒" },
-            { name: "北斋", id: "Brush_Normal", cat: "滚筒" },
-            { name: "文森", id: "Brush_Heavy", cat: "滚筒" },
-            // Chargers
-            { name: "斯普拉蓄力狙击枪", id: "Charger_Normal", cat: "狙击枪" },
-            /*{ name: "斯普拉准星枪", id: "Charger_NormalScope", cat: "狙击枪" },*/
-            { name: "公升4K", id: "Charger_Long", cat: "狙击枪" },
-            /*{ name: "4K准星枪", id: "Charger_LongScope", cat: "狙击枪" },*/
-            { name: "14式竹筒枪·甲", id: "Charger_Light", cat: "狙击枪" },
-            { name: "鱿快洁α", id: "Charger_Quick", cat: "狙击枪" },
-            { name: "油管", id: "Charger_Keep", cat: "狙击枪" },
-            { name: "R-PEN/5H", id: "Charger_Pencil", cat: "狙击枪" },
-            // Sloshers
-            { name: "飞溅泼桶", id: "Slosher_Strong", cat: "泼桶" },
-            { name: "洗笔桶", id: "Slosher_Diffusion", cat: "泼桶" },
-            { name: "回旋泼桶", id: "Slosher_Launcher", cat: "泼桶" },
-            { name: "满溢泡澡泼桶", id: "Slosher_Bathtub", cat: "泼桶" },
-            { name: "爆炸泼桶", id: "Slosher_Explosion", cat: "泼桶" },
-            { name: "墨泼淋", id: "Slosher_Washtub", cat: "泼桶" }, 
-            // Splatlings
-            { name: "斯普拉旋转枪", id: "Spinner_Mini", cat: "旋转枪" },
-            { name: "桶装旋转枪", id: "Spinner_Standard", cat: "旋转枪" },
-            { name: "消防栓旋转枪", id: "Spinner_Hyper", cat: "旋转枪" },
-            { name: "圆珠笔", id: "Spinner_Down", cat: "旋转枪" },
-            { name: "鹦鹉螺", id: "Spinner_Seryu", cat: "旋转枪" },
-            { name: "审查者", id: "Spinner_Duberu", cat: "旋转枪" },
-            // Dualies
-            { name: "斯普拉机动枪", id: "Twins_Normal", cat: "机动枪" },
-            { name: "溅镀枪", id: "Twins_Short", cat: "机动枪" }, 
-            { name: "双重清洁枪", id: "Twins_Long", cat: "机动枪" },
-            { name: "开尔文525", id: "Twins_Gallon", cat: "机动枪" },
-            { name: "四重弹跳手枪", id: "Twins_Hover", cat: "机动枪" },
-            { name: "灭火器FF", id: "Twins_Dual", cat: "机动枪" },
-            // Brellas
-            { name: "遮阳防空伞", id: "Shelter_Normal", cat: "防空伞" },
-            { name: "露营防空伞", id: "Shelter_Face", cat: "防空伞" },
-            { name: "特工伞", id: "Shelter_Compact", cat: "防空伞" },
-            { name: "24式防空伞·甲", id: "Shelter_Wide", cat: "防空伞" },
-            // Stringers / Splatanas
-            { name: "三发猎鱼弓", id: "Stringer_Normal", cat: "猎鱼弓" },
-            { name: "LACT-450", id: "Stringer_Short", cat: "猎鱼弓" },
-            { name: "邦普 V", id: "Stringer_V", cat: "猎鱼弓" }, 
-            { name: "工作刮水刀", id: "Saber_Normal", cat: "猎鱼弓" },
-            { name: "雨刷", id: "Saber_Heavy", cat: "猎鱼弓" },
-            { name: "薄荷牙膏刀", id: "Saber_Lite", cat: "猎鱼弓" } 
-        ];
+<script>
+    // === 1. 武器資料庫 ===
+    const weaponData = [
+        { name: "熊先生印章爆破枪", id: "Blaster_Bear", cat: "熊印" },
+        { name: "熊先生印章防空傘", id: "Shelter_Bear", cat: "熊印" },
+        { name: "熊先生印章狙擊槍", id: "Charger_Bear", cat: "熊印" },
+        { name: "熊先生印章潑桶", id: "Slosher_Bear", cat: "熊印" },
+        { name: "熊先生印章獵魚弓", id: "Stringer_Bear", cat: "熊印" },
+        { name: "熊先生印章刮水刀", id: "Saber_Bear", cat: "熊印" },
+        { name: "熊先生印章機動槍", id: "Twins_Bear", cat: "熊印" },
+        { name: "熊先生印章滾筒", id: "Roller_Bear", cat: "熊印" },
+        { name: "新葉射擊槍", id: "Shooter_First", cat: "射击枪" },
+        { name: "專業模型槍MG", id: "Shooter_Blaze", cat: "射击枪" },
+        { name: "斯普拉射擊槍", id: "Shooter_Normal", cat: "射击枪" },
+        { name: ".52加侖", id: "Shooter_Gravity", cat: "射击枪" },
+        { name: "N-ZAP85", id: "Shooter_QuickMiddle", cat: "射击枪" },
+        { name: "頂尖射擊槍", id: "Shooter_Expert", cat: "射击枪" },
+        { name: ".96加侖", id: "Shooter_Heavy", cat: "射击枪" },
+        { name: "噴射清潔槍", id: "Shooter_Long", cat: "射击枪" },
+        { name: "L3卷管槍", id: "Shooter_Triple", cat: "射击枪" },
+        { name: "H3卷管槍", id: "Shooter_Flash", cat: "射击枪" },
+        { name: "開瓶噴泉槍", id: "Shooter_Bottle", cat: "射击枪" },
+        { name: "廣域標記槍", id: "Shooter_Short", cat: "射击枪" },
+        { name: "窄域標記槍", id: "Shooter_Precision", cat: "射击枪" },
+        { name: "太空射擊槍", id: "Shooter_Nova", cat: "射击枪" },
+        { name: "新星爆破槍", id: "Blaster_Short", cat: "爆破枪" },
+        { name: "火熱爆破槍", id: "Blaster_Middle", cat: "爆破枪" },
+        { name: "遠距爆破槍", id: "Blaster_Long", cat: "爆破枪" },
+        { name: "快速爆破槍", id: "Blaster_Precision", cat: "爆破枪" },
+        { name: "快速爆破槍 精英", id: "Blaster_Expert", cat: "爆破枪" },
+        { name: "沖塗爆破槍", id: "Blaster_Light", cat: "爆破枪" },
+        { name: "S-BLAST92", id: "Blaster_ShortLong", cat: "爆破枪" },
+        { name: "碳纖維滾筒", id: "Roller_Compact", cat: "滚筒" },
+        { name: "斯普拉滾筒", id: "Roller_Normal", cat: "滚筒" },
+        { name: "電動馬達滾筒", id: "Roller_Heavy", cat: "滚筒" },
+        { name: "可變式滾筒", id: "Roller_Hunter", cat: "滚筒" },
+        { name: "寬滾筒", id: "Roller_Wide", cat: "滚筒" },
+        { name: "巴勃羅", id: "Brush_Mini", cat: "滚筒" },
+        { name: "北齋", id: "Brush_Normal", cat: "滚筒" },
+        { name: "文森", id: "Brush_Heavy", cat: "滚筒" },
+        { name: "魷快潔α", id: "Charger_Quick", cat: "狙击枪" },
+        { name: "斯普拉蓄力狙擊槍", id: "Charger_Normal", cat: "狙击枪" },
+        { name: "公升4K", id: "Charger_Long", cat: "狙击枪" },
+        { name: "14式竹筒槍·甲", id: "Charger_Light", cat: "狙击枪" },
+        { name: "油管", id: "Charger_Keep", cat: "狙击枪" },
+        { name: "R-PEN/5H", id: "Charger_Pencil", cat: "狙击枪" },
+        { name: "飛濺潑桶", id: "Slosher_Strong", cat: "泼桶" },
+        { name: "洗筆桶", id: "Slosher_Diffusion", cat: "泼桶" },
+        { name: "回旋潑桶", id: "Slosher_Launcher", cat: "泼桶" },
+        { name: "滿溢泡澡潑桶", id: "Slosher_Bathtub", cat: "泼桶" },
+        { name: "爆炸潑桶", id: "Slosher_Explosion", cat: "泼桶" },
+        { name: "墨潑淋", id: "Slosher_Washtub", cat: "泼桶" },
+        { name: "斯普拉旋轉槍", id: "Spinner_Mini", cat: "旋转枪" },
+        { name: "桶裝旋轉槍", id: "Spinner_Standard", cat: "旋转枪" },
+        { name: "消防栓旋轉槍", id: "Spinner_Hyper", cat: "旋转枪" },
+        { name: "鸚鵡螺號47", id: "Spinner_Seryu", cat: "旋转枪" },
+        { name: "圓珠筆", id: "Spinner_Down", cat: "旋转枪" },
+        { name: "審查者", id: "Spinner_Duberu", cat: "旋转枪" },
+        { name: "濺鍍槍", id: "Twins_Short", cat: "机动枪" },
+        { name: "斯普拉機動槍", id: "Twins_Normal", cat: "机动枪" },
+        { name: "開爾文525", id: "Twins_Gallon", cat: "机动枪" },
+        { name: "雙重清潔槍", id: "Twins_Long", cat: "机动枪" },
+        { name: "四重彈跳手槍", id: "Twins_Hover", cat: "机动枪" },
+        { name: "滅火器FF", id: "Twins_Dual", cat: "机动枪" },
+        { name: "遮陽防空傘", id: "Shelter_Normal", cat: "防空伞" },
+        { name: "露營防空傘", id: "Shelter_Face", cat: "防空伞" },
+        { name: "特工傘", id: "Shelter_Compact", cat: "防空伞" },
+        { name: "24式防空傘·甲", id: "Shelter_Wide", cat: "防空伞" },
+        { name: "三發獵魚弓", id: "Stringer_Normal", cat: "猎鱼弓" },
+        { name: "LACT-450", id: "Stringer_Short", cat: "猎鱼弓" },
+        { name: "邦普 V", id: "Stringer_V", cat: "猎鱼弓" },
+        { name: "工作刮水刀", id: "Saber_Heavy", cat: "刮水刀" },  
+        { name: "雨刷刮水刀", id: "Saber_Normal", cat: "刮水刀" }, 
+        { name: "薄荷牙膏刀", id: "Saber_Lite", cat: "刮水刀" }    
+    ];
 
-        // --- Logic ---
+    const statInkMap = {
+        "kuma_blaster": "Blaster_Bear", "kuma_shelter": "Shelter_Bear", "kuma_charger": "Charger_Bear",
+        "kuma_slosher": "Slosher_Bear", "kuma_stringer": "Stringer_Bear", "kuma_wiper": "Saber_Bear",
+        "kuma_maneuver": "Twins_Bear", "kuma_roller": "Roller_Bear",
+        "sshooter": "Shooter_Normal", "sharp": "Shooter_Precision", "bold": "Shooter_Short",
+        "96gal": "Shooter_Heavy", "52gal": "Shooter_Gravity", "nzap85": "Shooter_QuickMiddle", 
+        "prime": "Shooter_Expert", "jetsweeper": "Shooter_Long", "wakaba": "Shooter_First", 
+        "promodeler_mg": "Shooter_Blaze", "spaceshooter": "Shooter_Nova",
+        "l3reelgun": "Shooter_Triple", "h3reelgun": "Shooter_Flash", "bottlegeyser": "Shooter_Bottle",
+        "furo": "Slosher_Bathtub", "moprin": "Slosher_Washtub", "bucketslosher": "Slosher_Strong",
+        "hissen": "Slosher_Diffusion", "screwslosher": "Slosher_Launcher", "explosher": "Slosher_Explosion",
+        "soytuber": "Charger_Keep", "splatcharger": "Charger_Normal", "liter4k": "Charger_Long",
+        "squiclean_a": "Charger_Quick", "rpen_5h": "Charger_Pencil",
+        "quadhopper_black": "Twins_Hover", "sputtery": "Twins_Short", "maneuver": "Twins_Normal",
+        "kelvin525": "Twins_Gallon", "dualsweeper": "Twins_Long", "gaen_ff": "Twins_Dual",
+        "hydra": "Spinner_Hyper", "splatspinner": "Spinner_Mini", "barrelspinner": "Spinner_Standard",
+        "nautilus47": "Spinner_Seryu", "examiner": "Spinner_Duberu", "kugelshreiber": "Spinner_Down",
+        "splatroller": "Roller_Normal", "variableroller": "Roller_Hunter", "carbon": "Roller_Compact",
+        "dynamo": "Roller_Heavy", "wideroller": "Roller_Wide",
+        "nova": "Blaster_Short", "hotblaster": "Blaster_Middle", "longblaster": "Blaster_Long",
+        "rapid": "Blaster_Precision", "rapid_elite": "Blaster_Expert", "clash": "Blaster_Light",
+        "sblast92": "Blaster_ShortLong",
+        "pablo": "Brush_Mini", "hokusai": "Brush_Normal", "fincent": "Brush_Heavy",
+        "parashelter": "Shelter_Normal", "campingshelter": "Shelter_Face", "brella24mk1": "Shelter_Wide",
+        "spy_gadget": "Shelter_Compact",
+        "tristringer": "Stringer_Normal", "lact450": "Stringer_Short",
+        "drivewiper": "Saber_Normal", 
+        "jimuwiper": "Saber_Heavy",    
+        "dentalwiper_mint": "Saber_Lite" 
+    };
 
-        const STORAGE_KEY = "splatoon3_local_tracker";
-        let userCounts = {};
-        let currentFilter = "all";
+    // === 2. 邏輯控制 ===
+    let userCounts = {}, processedIds = new Set(), currentFilter = 'all';
+    let currentShiftInfo = { from: null, stage: "未知" };
+    let currentSort = 'default'; // 'default' | 'count'
 
-        window.onload = function() {
-            loadCounts();
-            renderGrid();
+    window.onload = () => {
+        try {
+            const storedCounts = sessionStorage.getItem('counts');
+            const storedIds = sessionStorage.getItem('ids');
+            const storedShift = sessionStorage.getItem('shiftInfo');
+
+            if (storedCounts) userCounts = JSON.parse(storedCounts);
+            if (storedIds) processedIds = new Set(JSON.parse(storedIds));
+            if (storedShift) currentShiftInfo = JSON.parse(storedShift);
+            
+            updateStatusPanel();
+        } catch(e) { console.warn("Session Init Error:", e); }
+        initDropZone();
+        updateToggleVisual(); // 初始化開關狀態
+        render();
+    };
+
+    function updateStatusPanel() {
+        const titleEl = document.getElementById('status-title');
+        const detailEl = document.getElementById('status-detail');
+        
+        if (titleEl && currentShiftInfo.from) {
+            titleEl.innerText = `目前統計場次: ${currentShiftInfo.from}`;
+        }
+        if (detailEl && currentShiftInfo.stage) {
+            detailEl.innerText = `場地: ${currentShiftInfo.stage} | 自動過濾非此時段的紀錄`;
+            titleEl.style.color = "var(--accent)";
+        }
+    }
+
+    function initDropZone() {
+        const dz = document.getElementById('dropZone');
+        if (!dz) return;
+        dz.ondragover = e => { e.preventDefault(); dz.style.background = 'rgba(52, 152, 219, 0.2)'; };
+        dz.ondragleave = () => dz.style.background = 'rgba(52, 152, 219, 0.08)';
+        dz.ondrop = e => {
+            e.preventDefault();
+            dz.style.background = 'rgba(52, 152, 219, 0.08)';
+            if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
         };
+    }
 
-        function loadCounts() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                userCounts = JSON.parse(stored);
+    async function handleFile(file) {
+        if(!file) return;
+        
+        try {
+            const buffer = await file.arrayBuffer();
+            let uint8 = new Uint8Array(buffer);
+            let content = "";
+
+            if (uint8[0] === 0x1f && uint8[1] === 0x8b) {
+                try {
+                    if (typeof pako !== 'undefined') {
+                        uint8 = pako.ungzip(uint8);
+                    } else {
+                        const ds = new DecompressionStream('gzip');
+                        const stream = new Blob([uint8]).stream().pipeThrough(ds);
+                        const res = new Response(stream);
+                        uint8 = new Uint8Array(await res.arrayBuffer());
+                    }
+                } catch (e) {
+                    console.warn("解壓失敗，嘗試直接讀取", e);
+                }
             }
-        }
 
-        function saveCounts() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(userCounts));
-        }
+            content = new TextDecoder("utf-8").decode(uint8);
 
-        // --- 關鍵圖片邏輯 ---
-        function getLocalPath(id) {
-            return `images/Path_Wst_${id}.png`;
+            let records = [];
+            const lines = content.split(/\r?\n/);
+            lines.forEach(line => {
+                const t = line.trim();
+                if(t) { try { records.push(JSON.parse(t)); } catch(e){} }
+            });
+
+            if (records.length === 0) {
+                try {
+                    const json = JSON.parse(content);
+                    records = Array.isArray(json) ? json : [json];
+                } catch(e) {
+                    throw new Error("無法解析 JSON，請確認檔案正確或嘗試手動解壓。");
+                }
+            }
+
+            records.sort((a, b) => {
+                const ta = a.start_at?.time || 0;
+                const tb = b.start_at?.time || 0;
+                return tb - ta;
+            });
+
+            if (records.length === 0) throw new Error("無效的打工紀錄");
+
+            const latestRecord = records[0];
+            const latestShiftFrom = latestRecord.shift?.from;
+            
+            if (latestShiftFrom) {
+                const stageName = latestRecord.stage?.name?.zh_TW || latestRecord.stage?.name?.ja_JP || latestRecord.stage?.name?.en_US || "未知場地";
+                
+                if (currentShiftInfo.rawFrom && currentShiftInfo.rawFrom !== latestShiftFrom) {
+                    if(confirm("檢測到新一輪班表的紀錄，是否清空舊資料以重新計算？")) {
+                        userCounts = {}; processedIds = new Set();
+                    }
+                }
+
+                currentShiftInfo = { 
+                    from: new Date(latestShiftFrom).toLocaleString(), 
+                    stage: stageName,
+                    rawFrom: latestShiftFrom
+                };
+                sessionStorage.setItem('shiftInfo', JSON.stringify(currentShiftInfo));
+                updateStatusPanel();
+
+                records = records.filter(r => r.shift?.from === latestShiftFrom);
+            }
+
+            let added = 0;
+            let unknown = new Set();
+            
+            records.forEach(rec => {
+                const uid = rec.uuid || rec.id;
+                if(!uid || processedIds.has(uid)) return;
+                
+                processedIds.add(uid);
+                added++;
+
+                const me = rec.players?.find(p => p.me) || rec.player;
+                const weapons = me?.weapons || (me?.weapon ? [me.weapon] : []);
+
+                weapons.forEach(w => {
+                    let ref = null;
+                    if (w.key && statInkMap[w.key]) ref = weaponData.find(d => d.id === statInkMap[w.key]);
+                    if (!ref && w.key) ref = weaponData.find(d => d.id === w.key);
+                    
+                    if(ref) {
+                        userCounts[ref.name] = (userCounts[ref.name] || 0) + 1;
+                    } else {
+                        unknown.add(w.key);
+                    }
+                });
+            });
+
+            save();
+            render();
+            
+            let msg = `✅ 導入成功！\n鎖定班表：${currentShiftInfo.from}\n本次新增：${added} 場`;
+            if (unknown.size > 0) msg += `\n⚠️ 未知武器代碼: ${Array.from(unknown).join(', ')}`;
+            alert(msg);
+
+        } catch (err) {
+            console.error(err);
+            alert(`錯誤: ${err.message}`);
         }
         
-        function getOnlinePath(id) {
-            return `https://cdn.jsdelivr.net/gh/Leanny/splat3@main/images/weapon_flat/Path_Wst_${id}.png`;
+        const fileInput = document.getElementById('fileInput');
+        if(fileInput) fileInput.value = '';
+    }
+
+    // === 3. UI 渲染 ===
+    function toggleSort() {
+        currentSort = currentSort === 'default' ? 'count' : 'default';
+        updateToggleVisual();
+        render();
+    }
+
+    function updateToggleVisual() {
+        const wrapper = document.getElementById('sortWrapper');
+        const lblDefault = document.getElementById('labelDefault');
+        const lblCount = document.getElementById('labelCount');
+        
+        if (currentSort === 'count') {
+            wrapper.classList.add('on');
+            lblCount.classList.add('active-text');
+            lblDefault.classList.remove('active-text');
+        } else {
+            wrapper.classList.remove('on');
+            lblDefault.classList.add('active-text');
+            lblCount.classList.remove('active-text');
+        }
+    }
+
+    function render() {
+        const grid = document.getElementById('grid');
+        const term = document.getElementById('search').value.toLowerCase();
+        grid.innerHTML = '';
+
+        const unique = [];
+        const seen = new Set();
+        weaponData.forEach(w => { if(!seen.has(w.id)) { seen.add(w.id); unique.push(w); }});
+
+        let list = unique.filter(w => {
+            const hitName = w.name.toLowerCase().includes(term);
+            const hitCat = currentFilter === 'all' || w.cat === currentFilter;
+            return hitName && hitCat;
+        });
+
+        if (currentSort === 'count') {
+            list.sort((a, b) => {
+                const countA = userCounts[a.name] || 0;
+                const countB = userCounts[b.name] || 0;
+                if (countB !== countA) return countB - countA;
+                return weaponData.indexOf(a) - weaponData.indexOf(b);
+            });
         }
 
-        function filterWeapons(category) {
-            currentFilter = category;
-            document.getElementById('searchInput').value = "";
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            const buttons = Array.from(document.querySelectorAll('.filter-btn'));
-            const targetBtn = buttons.find(b => b.textContent.includes(category) || (category === 'all' && b.textContent === '全部'));
-            if(targetBtn) targetBtn.classList.add('active');
-            renderGrid();
-        }
-
-        // --- 新增：更新進度函數 ---
-        function updateProgress() {
-            const total = weaponData.length;
-            let used = 0;
+        list.forEach(w => {
+            const num = userCounts[w.name] || 0;
+            const div = document.createElement('div');
+            div.className = `card ${num > 0 ? 'active' : ''}`;
             
-            // 計算有多少武器的次數 > 0
-            weaponData.forEach(w => {
-                if (userCounts[w.name] && userCounts[w.name] > 0) {
-                    used++;
-                }
-            });
-
-            // 計算百分比
-            const percent = total > 0 ? Math.round((used / total) * 100) : 0;
+            const localPath = `images/Path_Wst_${w.id}.png`;
+            const onlinePath = `https://raw.githubusercontent.com/Leanny/splat3/main/images/weapon_flat/Path_Wst_${w.id}.png`;
             
-            // 更新 UI
-            const el = document.getElementById('progress-display');
-            if (el) {
-                el.innerText = `收集进度: ${used} / ${total} (${percent}%)`;
-            }
+            div.innerHTML = `
+                <div class="img-box">
+                    <img src="${localPath}" onerror="this.onerror=null; this.src='${onlinePath}'">
+                </div>
+                <div class="name">${w.name}</div>
+                <div class="count">${num}</div>
+            `;
+            div.onclick = () => modCount(w.name, 1);
+            div.oncontextmenu = e => { e.preventDefault(); modCount(w.name, -1); };
+            grid.appendChild(div);
+        });
+        
+        const total = unique.length;
+        const has = unique.filter(w => (userCounts[w.name]||0) > 0).length;
+        
+        const progressEl = document.getElementById('progress');
+        if(progressEl) progressEl.innerText = `收集進度: ${has} / ${total} (${Math.round(has/total*100)}%)`;
+    }
+
+    function modCount(name, v) {
+        userCounts[name] = Math.max(0, (userCounts[name]||0) + v);
+        save(); render();
+    }
+    
+    function save() {
+        sessionStorage.setItem('counts', JSON.stringify(userCounts));
+        sessionStorage.setItem('ids', JSON.stringify([...processedIds]));
+    }
+    
+    function setFilter(c) {
+        currentFilter = c;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.classList.toggle('active', b.innerText.includes(c) || (c==='all' && b.innerText==='全部'));
+        });
+        render();
+    }
+
+    function clearData() {
+        if(confirm("確定清除資料？")) {
+            userCounts = {}; processedIds = new Set(); currentShiftInfo = { from: null, stage: "未知" };
+            sessionStorage.removeItem('shiftInfo');
+            updateStatusPanel();
+            save(); render();
         }
-
-        function renderGrid() {
-            const grid = document.getElementById('grid');
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            grid.innerHTML = '';
-
-            const filteredList = weaponData.filter(w => {
-                if (searchVal && !w.name.toLowerCase().includes(searchVal)) return false;
-                if (!searchVal && currentFilter !== 'all') {
-                    if (currentFilter === '猎鱼弓') return w.cat === '猎鱼弓';
-                    if (currentFilter === '滚筒') return w.cat === '滚筒';
-                    if (w.cat !== currentFilter) return false;
-                }
-                return true;
-            });
-
-            filteredList.forEach(weapon => {
-                const count = userCounts[weapon.name] || 0;
-                
-                const card = document.createElement('div');
-                card.className = `weapon-card ${count > 0 ? 'active' : 'zero-count'}`;
-                
-                // Image Container
-                const imgContainer = document.createElement('div');
-                imgContainer.className = 'img-container';
-
-                const img = document.createElement('img');
-                img.className = 'weapon-img';
-                
-                // Try Local -> Fail -> Try Online
-                img.src = getLocalPath(weapon.id);
-                
-                img.onerror = function() {
-                    this.onerror = function() {
-                        this.style.display = 'none';
-                        imgContainer.innerHTML = `<span style="font-size:0.8em;color:#aaa;">${weapon.name.substring(0,2)}</span>`;
-                    };
-                    this.src = getOnlinePath(weapon.id);
-                };
-
-                imgContainer.appendChild(img);
-
-                // Events
-                card.onclick = () => updateCount(weapon.name, 1);
-                card.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    updateCount(weapon.name, -1);
-                };
-
-                card.innerHTML = `
-                    <div class="weapon-name">${weapon.name}</div>
-                    <div class="weapon-count">${count}</div>
-                `;
-                
-                card.prepend(imgContainer);
-                grid.appendChild(card);
-            });
-
-            // 每次渲染時也更新進度條
-            updateProgress();
-        }
-
-        function updateCount(name, delta) {
-            if (!userCounts[name]) userCounts[name] = 0;
-            userCounts[name] += delta;
-            if (userCounts[name] < 0) userCounts[name] = 0;
-            saveCounts();
-            renderGrid();
-        }
-
-        function resetAll() {
-            if (confirm("确定要重置所有数据吗？")) {
-                userCounts = {};
-                saveCounts();
-                renderGrid();
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
