@@ -16,96 +16,77 @@
         }
         
         h1 { color: var(--accent); margin: 5px 0; font-size: 1.6rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .badge { background: linear-gradient(135deg, #00b894, #00cec9); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; vertical-align: middle; margin-left: 8px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .badge { background: linear-gradient(135deg, #0984e3, #74b9ff); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; vertical-align: middle; margin-left: 8px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         
+        /* === API 同步面板 (修正後) === */
+        .api-panel {
+            background: rgba(52, 152, 219, 0.1); border: 1px solid var(--blue);
+            padding: 15px; border-radius: 12px; margin: 10px 0; width: 80%; max-width: 600px;
+            display: flex; flex-direction: column; gap: 10px; align-items: center;
+        }
+        .api-row { display: flex; gap: 10px; width: 100%; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .api-input {
+            padding: 8px 12px; border-radius: 6px; border: 1px solid #555; 
+            background: #222; color: var(--accent); outline: none; flex: 1; text-align: center;
+            font-family: monospace; letter-spacing: 1px; min-width: 150px;
+        }
+        .api-input:focus { border-color: var(--accent); }
+        
+        .btn-sync {
+            background: linear-gradient(135deg, #0984e3, #00cec9); color: white; border: none;
+            padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.1s, opacity 0.2s;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+        }
+        .btn-sync:active { transform: scale(0.96); }
+        .btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .status-panel {
             background: rgba(29, 209, 161, 0.05); border: 1px solid var(--green);
-            padding: 8px 20px; border-radius: 8px; margin: 10px 0; text-align: center; width: 80%; max-width: 600px;
+            padding: 8px 20px; border-radius: 8px; margin: 5px 0 10px; text-align: center; width: 80%; max-width: 600px;
         }
         .status-title { color: var(--green); font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
         .status-detail { color: #aaa; font-size: 0.85rem; }
         
         .drop-zone { 
-            background: rgba(52, 152, 219, 0.05); padding: 15px; border-radius: 12px; margin: 10px 0; 
-            border: 2px dashed var(--blue); cursor: pointer; width: 80%; max-width: 600px; text-align: center; 
-            transition: all 0.3s ease; 
+            background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; margin: 5px 0; 
+            border: 2px dashed #666; cursor: pointer; width: 80%; max-width: 600px; text-align: center; 
+            transition: all 0.3s ease; font-size: 0.85rem; color: #888;
         }
-        .drop-zone:hover { background: rgba(52, 152, 219, 0.15); border-color: #fff; transform: scale(1.01); }
+        .drop-zone:hover { background: rgba(255, 255, 255, 0.1); border-color: #aaa; }
         
-        /* === 第一區：分類過濾器 === */
-        .filters { 
-            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 15px; width: 100%; 
-        }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 15px; width: 100%; }
         .filter-btn { background: #444; color: #ccc; padding: 6px 14px; border-radius: 20px; border: 1px solid #555; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
         .filter-btn.active { background: var(--accent); color: #222; font-weight: bold; border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
-        /* === 第二區：工具列 (分隔線 + 搜尋 + 排序 + 清除) === */
         .toolbar {
-            width: 100%;
-            border-top: 1px solid #444;
-            padding-top: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            width: 100%; border-top: 1px solid #444; padding-top: 15px;
+            display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
         }
-
-        /* 搜尋框 */
         .search-input { 
             padding: 8px 15px; border-radius: 20px; border: 1px solid #555; 
-            background: #333; color: white; outline: none; width: 200px;
-            transition: border 0.3s;
+            background: #333; color: white; outline: none; width: 180px;
         }
-        .search-input:focus { border-color: var(--blue); box-shadow: 0 0 5px rgba(52,152,219,0.5); }
 
-        /* === 滑動開關樣式 (Toggle Switch) === */
         .toggle-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 30px;
-            transition: background 0.3s;
+            display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 30px; transition: background 0.3s;
         }
         .toggle-wrapper:hover { background: rgba(255,255,255,0.05); }
-
         .toggle-label { font-size: 0.9rem; font-weight: bold; color: #aaa; transition: color 0.3s; }
         .toggle-label.active-text { color: var(--green); text-shadow: 0 0 5px rgba(29,209,161,0.5); }
-
         .toggle-track {
-            width: 44px; height: 24px;
-            background-color: var(--switch-off);
-            border-radius: 12px;
-            position: relative;
-            transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            width: 44px; height: 24px; background-color: var(--switch-off); border-radius: 12px; position: relative;
+            transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
-
         .toggle-knob {
-            width: 20px; height: 20px;
-            background-color: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px; left: 2px;
-            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            width: 20px; height: 20px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-
-        /* 開關啟動狀態 */
         .toggle-wrapper.on .toggle-track { background-color: var(--green); }
         .toggle-wrapper.on .toggle-knob { transform: translateX(20px); }
 
-        /* 清除按鈕 */
-        .btn-clear { 
-            background: var(--red); color: white; border: none; 
-            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; 
-            transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .btn-clear:hover { background: #c0392b; }
+        .btn-clear { background: var(--red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* 網格與卡片 */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; width: 100%; max-width: 1200px; padding-bottom: 50px; margin-top: 20px; }
         .card { background: var(--card); border: 2px solid #576574; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -120,14 +101,30 @@
     <div class="controls">
         <h1>🐟 打工武器紀錄 </h1>
         
+        <div class="api-panel">
+            <div style="font-weight:bold; color:var(--blue);">🔄 Stat.ink 線上同步</div>
+            <div style="font-size:0.85rem; color:#aaa; margin-bottom:8px;">
+                請輸入您的 <b>Stat.ink ID</b>
+            </div>
+            <div class="api-row">
+                <input type="text" id="statInkId" class="api-input" placeholder="您的 ID (必填)">
+                <input type="password" id="apiToken" class="api-input" placeholder="Token (私密帳號才要填)" style="width:120px; flex:0.5;">
+                <button class="btn-sync" onclick="syncFromApi()" id="btnSync">
+                    <span>☁️ 同步</span>
+                </button>
+            </div>
+            <div style="font-size:0.8rem; color:#888;">
+                ⚠️ 若點擊無反應，請嘗試安裝 <b>Allow CORS</b> 擴充功能或使用 <b>VS Code Live Server</b>。
+            </div>
+        </div>
+
         <div class="status-panel">
             <div id="status-title" class="status-title">等待資料導入...</div>
-            <div id="status-detail" class="status-detail">請拖入 stat.ink 匯出的 JSON 檔案</div>
+            <div id="status-detail" class="status-detail">請同步或拖入檔案</div>
         </div>
         
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
-            <div style="font-size: 1.1rem; font-weight: bold; color: var(--blue); margin-bottom: 5px;">📂 點擊或拖入檔案</div>
-            <div style="font-size: 0.9rem; color: #aaa;">支援 .json / .gz (自動只計算最新一輪的班表)</div>
+            📂 或 點擊此處手動拖入 .json / .gz 檔案
             <input type="file" id="fileInput" accept=".json,.gz" style="display: none" onchange="handleFile(this.files[0])">
         </div>
 
@@ -148,16 +145,12 @@
         
         <div class="toolbar">
             <input type="text" id="search" class="search-input" placeholder="🔍 搜尋武器..." oninput="render()">
-            
             <div class="toggle-wrapper" id="sortWrapper" onclick="toggleSort()">
                 <span class="toggle-label" id="labelDefault">預設</span>
-                <div class="toggle-track">
-                    <div class="toggle-knob"></div>
-                </div>
+                <div class="toggle-track"><div class="toggle-knob"></div></div>
                 <span class="toggle-label" id="labelCount">使用次數</span>
             </div>
-
-            <button class="btn-clear" onclick="clearData()">🗑️ 清除資料</button>
+            <button class="btn-clear" onclick="clearData()">🗑️ 清除</button>
         </div>
         
         <div id="progress" style="margin-top: 10px; color: var(--green); font-weight: bold;"></div>
@@ -275,7 +268,7 @@
     // === 2. 邏輯控制 ===
     let userCounts = {}, processedIds = new Set(), currentFilter = 'all';
     let currentShiftInfo = { from: null, stage: "未知" };
-    let currentSort = 'default'; // 'default' | 'count'
+    let currentSort = 'default';
 
     window.onload = () => {
         try {
@@ -287,17 +280,65 @@
             if (storedIds) processedIds = new Set(JSON.parse(storedIds));
             if (storedShift) currentShiftInfo = JSON.parse(storedShift);
             
+            const savedId = localStorage.getItem('statInkId');
+            const savedToken = localStorage.getItem('statInkToken');
+            
+            if(savedId && document.getElementById('statInkId')) document.getElementById('statInkId').value = savedId;
+            if(savedToken && document.getElementById('apiToken')) document.getElementById('apiToken').value = savedToken;
+
             updateStatusPanel();
         } catch(e) { console.warn("Session Init Error:", e); }
         initDropZone();
-        updateToggleVisual(); // 初始化開關狀態
+        updateToggleVisual();
         render();
     };
+
+    // === API 同步函數 ===
+    async function syncFromApi() {
+        const idInput = document.getElementById('statInkId');
+        const tokenInput = document.getElementById('apiToken');
+        
+        const userId = idInput.value.trim();
+        const token = tokenInput.value.trim();
+        const btn = document.getElementById('btnSync');
+        
+        if (!userId) { alert("請輸入您的 Stat.ink ID (網址 @ 後面的名稱)！"); return; }
+
+        localStorage.setItem('statInkId', userId);
+        if (token) localStorage.setItem('statInkToken', token);
+
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ 讀取中...</span>`;
+
+        try {
+            // 使用 Feed 網址，這才是正確的 GET 方式
+            const url = `https://stat.ink/@${userId}/salmon3.json?limit=50`;
+            const headers = { 'Accept': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const response = await fetch(url, { headers });
+
+            if (!response.ok) {
+                if (response.status === 0) throw new Error("瀏覽器 CORS 阻擋。請使用 VS Code Live Server 或 Allow CORS 外掛。");
+                if (response.status === 404) throw new Error(`找不到用戶 "${userId}" 或資料不公開。`);
+                throw new Error(`API 錯誤: ${response.status}`);
+            }
+
+            const data = await response.json();
+            processRecords(data, "API 同步");
+
+        } catch (err) {
+            console.error(err);
+            alert(`同步失敗：${err.message}\n\n💡 提示：請確認 ID 正確。若是 CORS 錯誤，請安裝 Allow CORS 外掛或使用拖曳檔案方式。`);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span>☁️ 同步</span>`;
+        }
+    }
 
     function updateStatusPanel() {
         const titleEl = document.getElementById('status-title');
         const detailEl = document.getElementById('status-detail');
-        
         if (titleEl && currentShiftInfo.from) {
             titleEl.innerText = `目前統計場次: ${currentShiftInfo.from}`;
         }
@@ -311,129 +352,103 @@
         const dz = document.getElementById('dropZone');
         if (!dz) return;
         dz.ondragover = e => { e.preventDefault(); dz.style.background = 'rgba(52, 152, 219, 0.2)'; };
-        dz.ondragleave = () => dz.style.background = 'rgba(52, 152, 219, 0.08)';
+        dz.ondragleave = () => dz.style.background = 'rgba(255, 255, 255, 0.05)';
         dz.ondrop = e => {
             e.preventDefault();
-            dz.style.background = 'rgba(52, 152, 219, 0.08)';
+            dz.style.background = 'rgba(255, 255, 255, 0.05)';
             if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
         };
     }
 
     async function handleFile(file) {
         if(!file) return;
-        
         try {
             const buffer = await file.arrayBuffer();
             let uint8 = new Uint8Array(buffer);
             let content = "";
 
             if (uint8[0] === 0x1f && uint8[1] === 0x8b) {
-                try {
-                    if (typeof pako !== 'undefined') {
-                        uint8 = pako.ungzip(uint8);
-                    } else {
-                        const ds = new DecompressionStream('gzip');
-                        const stream = new Blob([uint8]).stream().pipeThrough(ds);
-                        const res = new Response(stream);
-                        uint8 = new Uint8Array(await res.arrayBuffer());
-                    }
-                } catch (e) {
-                    console.warn("解壓失敗，嘗試直接讀取", e);
+                if (typeof pako !== 'undefined') {
+                    uint8 = pako.ungzip(uint8);
+                } else {
+                    const ds = new DecompressionStream('gzip');
+                    const stream = new Blob([uint8]).stream().pipeThrough(ds);
+                    const res = new Response(stream);
+                    uint8 = new Uint8Array(await res.arrayBuffer());
                 }
             }
-
             content = new TextDecoder("utf-8").decode(uint8);
-
+            
             let records = [];
             const lines = content.split(/\r?\n/);
-            lines.forEach(line => {
-                const t = line.trim();
-                if(t) { try { records.push(JSON.parse(t)); } catch(e){} }
-            });
-
+            lines.forEach(line => { if(line.trim()) try { records.push(JSON.parse(line)); } catch(e){} });
+            
             if (records.length === 0) {
-                try {
-                    const json = JSON.parse(content);
-                    records = Array.isArray(json) ? json : [json];
-                } catch(e) {
-                    throw new Error("無法解析 JSON，請確認檔案正確或嘗試手動解壓。");
-                }
+                const parsed = JSON.parse(content);
+                records = Array.isArray(parsed) ? parsed : [parsed];
             }
 
-            records.sort((a, b) => {
-                const ta = a.start_at?.time || 0;
-                const tb = b.start_at?.time || 0;
-                return tb - ta;
-            });
-
-            if (records.length === 0) throw new Error("無效的打工紀錄");
-
-            const latestRecord = records[0];
-            const latestShiftFrom = latestRecord.shift?.from;
-            
-            if (latestShiftFrom) {
-                const stageName = latestRecord.stage?.name?.zh_TW || latestRecord.stage?.name?.ja_JP || latestRecord.stage?.name?.en_US || "未知場地";
-                
-                if (currentShiftInfo.rawFrom && currentShiftInfo.rawFrom !== latestShiftFrom) {
-                    if(confirm("檢測到新一輪班表的紀錄，是否清空舊資料以重新計算？")) {
-                        userCounts = {}; processedIds = new Set();
-                    }
-                }
-
-                currentShiftInfo = { 
-                    from: new Date(latestShiftFrom).toLocaleString(), 
-                    stage: stageName,
-                    rawFrom: latestShiftFrom
-                };
-                sessionStorage.setItem('shiftInfo', JSON.stringify(currentShiftInfo));
-                updateStatusPanel();
-
-                records = records.filter(r => r.shift?.from === latestShiftFrom);
-            }
-
-            let added = 0;
-            let unknown = new Set();
-            
-            records.forEach(rec => {
-                const uid = rec.uuid || rec.id;
-                if(!uid || processedIds.has(uid)) return;
-                
-                processedIds.add(uid);
-                added++;
-
-                const me = rec.players?.find(p => p.me) || rec.player;
-                const weapons = me?.weapons || (me?.weapon ? [me.weapon] : []);
-
-                weapons.forEach(w => {
-                    let ref = null;
-                    if (w.key && statInkMap[w.key]) ref = weaponData.find(d => d.id === statInkMap[w.key]);
-                    if (!ref && w.key) ref = weaponData.find(d => d.id === w.key);
-                    
-                    if(ref) {
-                        userCounts[ref.name] = (userCounts[ref.name] || 0) + 1;
-                    } else {
-                        unknown.add(w.key);
-                    }
-                });
-            });
-
-            save();
-            render();
-            
-            let msg = `✅ 導入成功！\n鎖定班表：${currentShiftInfo.from}\n本次新增：${added} 場`;
-            if (unknown.size > 0) msg += `\n⚠️ 未知武器代碼: ${Array.from(unknown).join(', ')}`;
-            alert(msg);
+            processRecords(records, "檔案導入");
 
         } catch (err) {
             console.error(err);
-            alert(`錯誤: ${err.message}`);
+            alert(`檔案解析錯誤: ${err.message}`);
         }
-        
-        const fileInput = document.getElementById('fileInput');
-        if(fileInput) fileInput.value = '';
+        document.getElementById('fileInput').value = '';
     }
 
-    // === 3. UI 渲染 ===
+    // === 核心資料處理 ===
+    function processRecords(records, sourceName) {
+        records.sort((a, b) => (b.start_at?.time || 0) - (a.start_at?.time || 0));
+        
+        if (records.length === 0) { alert("沒有找到打工紀錄"); return; }
+
+        const latestRecord = records[0];
+        const latestShiftFrom = latestRecord.shift?.from;
+        
+        if (latestShiftFrom) {
+            const stageName = latestRecord.stage?.name?.zh_TW || latestRecord.stage?.name?.ja_JP || latestRecord.stage?.name?.en_US || "未知場地";
+            
+            if (currentShiftInfo.rawFrom && currentShiftInfo.rawFrom !== latestShiftFrom) {
+                if(confirm(`檢測到新班表 (${stageName})，是否清空舊資料？`)) {
+                    userCounts = {}; processedIds = new Set();
+                }
+            }
+
+            currentShiftInfo = { 
+                from: new Date(latestShiftFrom).toLocaleString(), 
+                stage: stageName, 
+                rawFrom: latestShiftFrom 
+            };
+            sessionStorage.setItem('shiftInfo', JSON.stringify(currentShiftInfo));
+            updateStatusPanel();
+
+            records = records.filter(r => r.shift?.from === latestShiftFrom);
+        }
+
+        let added = 0;
+        records.forEach(rec => {
+            const uid = rec.uuid || rec.id;
+            if(!uid || processedIds.has(uid)) return;
+            processedIds.add(uid);
+            added++;
+
+            const me = rec.players?.find(p => p.me) || rec.player;
+            const weapons = me?.weapons || (me?.weapon ? [me.weapon] : []);
+
+            weapons.forEach(w => {
+                let ref = null;
+                if (w.key && statInkMap[w.key]) ref = weaponData.find(d => d.id === statInkMap[w.key]);
+                if (!ref && w.key) ref = weaponData.find(d => d.id === w.key);
+                if(ref) userCounts[ref.name] = (userCounts[ref.name] || 0) + 1;
+            });
+        });
+
+        save();
+        render();
+        alert(`✅ ${sourceName} 成功！\n鎖定班表：${currentShiftInfo.from}\n本次新增：${added} 場`);
+    }
+
     function toggleSort() {
         currentSort = currentSort === 'default' ? 'count' : 'default';
         updateToggleVisual();
@@ -444,7 +459,6 @@
         const wrapper = document.getElementById('sortWrapper');
         const lblDefault = document.getElementById('labelDefault');
         const lblCount = document.getElementById('labelCount');
-        
         if (currentSort === 'count') {
             wrapper.classList.add('on');
             lblCount.classList.add('active-text');
@@ -502,7 +516,6 @@
         
         const total = unique.length;
         const has = unique.filter(w => (userCounts[w.name]||0) > 0).length;
-        
         const progressEl = document.getElementById('progress');
         if(progressEl) progressEl.innerText = `收集進度: ${has} / ${total} (${Math.round(has/total*100)}%)`;
     }
@@ -520,6 +533,7 @@
     function setFilter(c) {
         currentFilter = c;
         document.querySelectorAll('.filter-btn').forEach(b => {
+            if (b.classList.contains('sort-btn')) return;
             b.classList.toggle('active', b.innerText.includes(c) || (c==='all' && b.innerText==='全部'));
         });
         render();
