@@ -3,25 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Splatoon 3 打工統計 </title>
+    <title>Splatoon 3 打工統計</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <style>
         :root { --bg: #2b2b2b; --card: #3d3d3d; --text: #ecf0f1; --accent: #ff9f43; --green: #1dd1a1; --blue: #3498db; --red: #ff6b6b; --switch-off: #555; }
         body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; user-select: none; }
         
+        /* 讓 Controls 區域在手機上更緊湊 */
         .controls { 
-            position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 15px; 
+            position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 10px 15px; 
             width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; 
             border-bottom: 1px solid #444; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 0 0 15px 15px; 
         }
         
-        h1 { color: var(--accent); margin: 5px 0; font-size: 1.6rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        h1 { color: var(--accent); margin: 5px 0; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center; }
         .badge { background: linear-gradient(135deg, #0984e3, #74b9ff); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; vertical-align: middle; margin-left: 8px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        /* === 新增：收起/展開按鈕 === */
+        .btn-toggle-panel {
+            background: #444; color: #aaa; border: 1px solid #555;
+            width: 100%; max-width: 600px; padding: 5px; margin: 10px 0;
+            border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+            transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        .btn-toggle-panel:hover { background: #555; color: white; border-color: #777; }
+        .btn-toggle-panel:active { transform: scale(0.98); }
+
+        /* 用來包住要隱藏的區域 */
+        #importArea {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            overflow: hidden;
+        }
+        /* 隱藏時的 class */
+        .area-hidden { display: none !important; }
         
-        /* === API 同步面板 (修正後) === */
+        /* API 同步面板 */
         .api-panel {
             background: rgba(52, 152, 219, 0.1); border: 1px solid var(--blue);
-            padding: 15px; border-radius: 12px; margin: 10px 0; width: 80%; max-width: 600px;
+            padding: 15px; border-radius: 12px; margin: 5px 0; width: 80%; max-width: 600px;
             display: flex; flex-direction: column; gap: 10px; align-items: center;
         }
         .api-row { display: flex; gap: 10px; width: 100%; justify-content: center; align-items: center; flex-wrap: wrap; }
@@ -43,89 +63,91 @@
 
         .status-panel {
             background: rgba(29, 209, 161, 0.05); border: 1px solid var(--green);
-            padding: 8px 20px; border-radius: 8px; margin: 5px 0 10px; text-align: center; width: 80%; max-width: 600px;
+            padding: 8px 20px; border-radius: 8px; margin: 5px 0; text-align: center; width: 80%; max-width: 600px;
         }
         .status-title { color: var(--green); font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
         .status-detail { color: #aaa; font-size: 0.85rem; }
         
         .drop-zone { 
-            background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; margin: 5px 0; 
+            background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin: 5px 0 10px; 
             border: 2px dashed #666; cursor: pointer; width: 80%; max-width: 600px; text-align: center; 
-            transition: all 0.3s ease; font-size: 0.85rem; color: #888;
+            transition: all 0.3s ease; font-size: 0.9rem; color: #aaa;
         }
-        .drop-zone:hover { background: rgba(255, 255, 255, 0.1); border-color: #aaa; }
+        .drop-zone:hover { background: rgba(255, 255, 255, 0.1); border-color: #aaa; color: white; }
         
-        .filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0 15px; width: 100%; }
-        .filter-btn { background: #444; color: #ccc; padding: 6px 14px; border-radius: 20px; border: 1px solid #555; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+        /* 篩選器與工具列 */
+        .filters { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 10px 0 5px; width: 100%; }
+        .filter-btn { background: #444; color: #ccc; padding: 5px 12px; border-radius: 20px; border: 1px solid #555; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
         .filter-btn.active { background: var(--accent); color: #222; font-weight: bold; border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
         .toolbar {
-            width: 100%; border-top: 1px solid #444; padding-top: 15px;
-            display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
+            width: 100%; border-top: 1px solid #444; padding-top: 10px; margin-top: 5px;
+            display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;
         }
         .search-input { 
             padding: 8px 15px; border-radius: 20px; border: 1px solid #555; 
-            background: #333; color: white; outline: none; width: 180px;
+            background: #333; color: white; outline: none; width: 160px;
         }
 
+        /* Toggle Switch */
         .toggle-wrapper {
-            display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 30px; transition: background 0.3s;
+            display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 5px 10px; border-radius: 30px; transition: background 0.3s;
         }
         .toggle-wrapper:hover { background: rgba(255,255,255,0.05); }
-        .toggle-label { font-size: 0.9rem; font-weight: bold; color: #aaa; transition: color 0.3s; }
+        .toggle-label { font-size: 0.85rem; font-weight: bold; color: #aaa; transition: color 0.3s; }
         .toggle-label.active-text { color: var(--green); text-shadow: 0 0 5px rgba(29,209,161,0.5); }
         .toggle-track {
-            width: 44px; height: 24px; background-color: var(--switch-off); border-radius: 12px; position: relative;
+            width: 40px; height: 22px; background-color: var(--switch-off); border-radius: 12px; position: relative;
             transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
         .toggle-knob {
-            width: 20px; height: 20px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;
             transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .toggle-wrapper.on .toggle-track { background-color: var(--green); }
-        .toggle-wrapper.on .toggle-knob { transform: translateX(20px); }
+        .toggle-wrapper.on .toggle-knob { transform: translateX(18px); }
 
-        .btn-clear { background: var(--red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-clear { background: var(--red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; width: 100%; max-width: 1200px; padding-bottom: 50px; margin-top: 20px; }
-        .card { background: var(--card); border: 2px solid #576574; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; position: relative; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 10px; width: 100%; max-width: 1200px; padding-bottom: 50px; margin-top: 20px; }
+        .card { background: var(--card); border: 2px solid #576574; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .card.active { border-color: var(--green); background: #2f4038; box-shadow: 0 0 10px rgba(29, 209, 161, 0.2); }
-        .img-box { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 5px; }
+        .img-box { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 5px; }
         .card img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
-        .card .name { font-size: 0.85rem; text-align: center; color: #bdc3c7; height: 2.8em; overflow: hidden; margin: 0 0 4px; line-height: 1.4em; }
-        .card .count { font-size: 1.4em; color: var(--green); font-weight: 800; background: rgba(0,0,0,0.4); width: 100%; text-align: center; border-radius: 6px; padding: 2px 0; }
+        .card .name { font-size: 0.8rem; text-align: center; color: #bdc3c7; height: 2.8em; overflow: hidden; margin: 0 0 4px; line-height: 1.4em; }
+        .card .count { font-size: 1.3em; color: var(--green); font-weight: 800; background: rgba(0,0,0,0.4); width: 100%; text-align: center; border-radius: 6px; padding: 2px 0; }
     </style>
 </head>
 <body>
     <div class="controls">
-        <h1>🐟 打工武器紀錄 </h1>
-        
-        <div class="api-panel">
-            <div style="font-weight:bold; color:var(--blue);">🔄 Stat.ink 線上同步</div>
-            <div style="font-size:0.85rem; color:#aaa; margin-bottom:8px;">
-                請輸入您的 <b>Stat.ink ID</b>
-            </div>
-            <div class="api-row">
-                <input type="text" id="statInkId" class="api-input" placeholder="您的 ID (必填)">
-                <input type="password" id="apiToken" class="api-input" placeholder="Token (私密帳號才要填)" style="width:120px; flex:0.5;">
-                <button class="btn-sync" onclick="syncFromApi()" id="btnSync">
-                    <span>☁️ 同步</span>
-                </button>
-            </div>
-            <div style="font-size:0.8rem; color:#888;">
-                ⚠️ 若點擊無反應，請嘗試安裝 <b>Allow CORS</b> 擴充功能或使用 <b>VS Code Live Server</b>。
-            </div>
-        </div>
+        <h1>🐟 打工武器紀錄</h1>
 
-        <div class="status-panel">
-            <div id="status-title" class="status-title">等待資料導入...</div>
-            <div id="status-detail" class="status-detail">請同步或拖入檔案</div>
-        </div>
+        <button class="btn-toggle-panel" onclick="toggleImport()" id="btnToggleImport">
+            🔼 收起匯入面板
+        </button>
         
-        <div class="drop-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
-            📂 或 點擊此處手動拖入 .json / .gz 檔案
-            <input type="file" id="fileInput" accept=".json,.gz" style="display: none" onchange="handleFile(this.files[0])">
+        <div id="importArea">
+            <div class="api-panel">
+                <div style="font-weight:bold; color:var(--blue);">🔄 Stat.ink 線上同步</div>
+                <div class="api-row">
+                    <input type="text" id="statInkId" class="api-input" placeholder="Stat.ink ID (必填)">
+                    <input type="hidden" id="apiToken" class="api-input" placeholder="Token (私密才填)" style="width:100px; flex:0.5;">
+                    <button class="btn-sync" onclick="syncFromApi()" id="btnSync">
+                        <span>☁️ 同步</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div id="status-title" class="status-title">等待資料導入...</div>
+                <div id="status-detail" class="status-detail">請同步或拖入檔案</div>
+            </div>
+            
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
+                📂 點擊或拖入 .json / .gz 檔案
+                <input type="file" id="fileInput" accept=".json,.gz" style="display: none" onchange="handleFile(this.files[0])">
+            </div>
         </div>
 
         <div class="filters">
@@ -144,16 +166,16 @@
         </div>
         
         <div class="toolbar">
-            <input type="text" id="search" class="search-input" placeholder="🔍 搜尋武器..." oninput="render()">
+            <input type="text" id="search" class="search-input" placeholder="🔍 搜尋..." oninput="render()">
             <div class="toggle-wrapper" id="sortWrapper" onclick="toggleSort()">
                 <span class="toggle-label" id="labelDefault">預設</span>
                 <div class="toggle-track"><div class="toggle-knob"></div></div>
-                <span class="toggle-label" id="labelCount">使用次數</span>
+                <span class="toggle-label" id="labelCount">次數</span>
             </div>
-            <button class="btn-clear" onclick="clearData()">🗑️ 清除</button>
+            <button class="btn-clear" onclick="clearData()">🗑️</button>
         </div>
         
-        <div id="progress" style="margin-top: 10px; color: var(--green); font-weight: bold;"></div>
+        <div id="progress" style="margin-top: 5px; font-size: 0.9rem; color: var(--green); font-weight: bold;"></div>
     </div>
 
     <div id="grid" class="grid"></div>
@@ -293,6 +315,19 @@
         render();
     };
 
+    // === 新增：收起/展開 邏輯 ===
+    function toggleImport() {
+        const area = document.getElementById('importArea');
+        const btn = document.getElementById('btnToggleImport');
+        if (area.classList.contains('area-hidden')) {
+            area.classList.remove('area-hidden');
+            btn.innerText = '🔼 收起匯入面板';
+        } else {
+            area.classList.add('area-hidden');
+            btn.innerText = '📂 展開匯入/同步';
+        }
+    }
+
     // === API 同步函數 ===
     async function syncFromApi() {
         const idInput = document.getElementById('statInkId');
@@ -311,7 +346,6 @@
         btn.innerHTML = `<span>⏳ 讀取中...</span>`;
 
         try {
-            // 使用 Feed 網址，這才是正確的 GET 方式
             const url = `https://stat.ink/@${userId}/salmon3.json?limit=50`;
             const headers = { 'Accept': 'application/json' };
             if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -447,6 +481,10 @@
         save();
         render();
         alert(`✅ ${sourceName} 成功！\n鎖定班表：${currentShiftInfo.from}\n本次新增：${added} 場`);
+        
+        // 自動收起面板，讓用戶看結果
+        const area = document.getElementById('importArea');
+        if (!area.classList.contains('area-hidden')) toggleImport();
     }
 
     function toggleSort() {
