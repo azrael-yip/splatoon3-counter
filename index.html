@@ -346,7 +346,7 @@
         btn.innerHTML = `<span>⏳ 讀取中...</span>`;
 
         try {
-            const url = `https://stat.ink/@${userId}/salmon3.json?limit=50`;
+            const url = `https://stat.ink/@${userId}/salmon3.json?limit=200`;
             const headers = { 'Accept': 'application/json' };
             if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -587,4 +587,5 @@
     }
 </script>
 </body>
+
 </html>
